@@ -7,38 +7,43 @@ io.on('connection', (client) => {
 
     console.log('Usuario conectado');
 
-    client.emit('enviarMensaje', {
-        usuario: 'Administrador',
-        mensaje: 'Bienvenido a esta aplicación'
-    });
-
-
-
     client.on('disconnect', () => {
         console.log('Usuario desconectado');
     });
 
     // Escuchar el cliente
-    client.on('enviarMensaje', (data, callback) => {
+    client.on('siguienteTicket', (data, callback) => {
 
-        console.log(data);
+         let siguiente = ticketControl.siguiente();   
+         callback(siguiente);
+         console.log(siguiente);
+         
+    });
 
-        client.broadcast.emit('enviarMensaje', data);
+    //Emitir estadoa actual 
+    client.emit('estadoActual', {
+        actual: ticketControl.getUltimoTicket(),
+        ultimos4: ticketControl.getUltimo4()
+    });
 
+    client.on('atenderTicket', (data, callback)=>{
+        if (!data.escritorio) {
+            return callback({
+                err: true,
+                mensaje: 'El escrotorio es necesario'
+            });
+        }
 
-        // if (mensaje.usuario) {
-        //     callback({
-        //         resp: 'TODO SALIO BIEN!'
-        //     });
+        console.log(data.escritorio);
+        
+        let atenderTicket = ticketControl.atenderTicket(data.escritorio);
 
-        // } else {
-        //     callback({
-        //         resp: 'TODO SALIO MAL!!!!!!!!'
-        //     });
-        // }
+        callback(atenderTicket);
 
-
-
+        //Actualizar pagina pública
+        client.broadcast.emit('ultimos4',{
+            ultimos4: ticketControl.getUltimo4()
+        });
     });
 
 });
